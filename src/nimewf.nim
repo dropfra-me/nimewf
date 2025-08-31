@@ -1,2 +1,3 @@
 from nimewf/version import nil
-export version
+from nimewf/handle import nil
+export version, handle

@@ -31,21 +31,21 @@ This project can use either a system `libewf` (via pkg-config) or build a vendor
 - System libewf (recommended on CI images that provide it):
   - Ensure `pkg-config --cflags --libs libewf` works (install `libewf-dev`/`-devel` or `brew install libewf`).
   - Generate config: `nimble genPkgConfig`
-  - Build/tests: `nimble test -d:nimewfUseLibewf`
+  - Build/tests: `nimble test`
 
 - Vendored libewf (portable, no system package needed):
   - Build and locally install to `build/libewf-prefix`: `nimble buildLibewf`
-  - Build/tests using vendored pkg-config file: `nimble test -d:nimewfUseLibewf`
+  - Build/tests using vendored pkg-config file: `nimble test`
 
-Both flows generate/consume `config.nims` that wires compile flags from pkg-config when `-d:nimewfUseLibewf` is set.
+Both flows generate/consume `config.nims` that wires compile flags from pkg-config.
 
 ## Nim compile examples
 
 - Build your app using system or vendored libewf via pkg-config flags injected by `config.nims`:
-  - `nim c -d:nimewfUseLibewf yourapp.nim`
+  - `nim c yourapp.nim`
 
 - If you prefer explicit flags (not required when using `config.nims`):
-  - `nim c -d:nimewfUseLibewf --passC:$(pkg-config --cflags libewf) --passL:$(pkg-config --libs libewf) yourapp.nim`
+  - `nim c --passC:$(pkg-config --cflags libewf) --passL:$(pkg-config --libs libewf) yourapp.nim`
 
 ## CI notes
 
@@ -53,17 +53,16 @@ Both flows generate/consume `config.nims` that wires compile flags from pkg-conf
   - `brew install pkg-config autoconf automake libtool bison flex`
   - System lib: `brew install libewf && nimble genPkgConfig`
   - Vendored lib: `nimble buildLibewf`
-  - Run: `nimble test -d:nimewfUseLibewf`
+  - Run: `nimble test`
 
 - Ubuntu (GitHub Actions):
   - `sudo apt-get update`
   - System lib: `sudo apt-get install -y libewf-dev pkg-config` then `nimble genPkgConfig`
   - Vendored lib: `sudo apt-get install -y build-essential pkg-config autoconf automake libtool bison flex` then `nimble buildLibewf`
-  - Run: `nimble test -d:nimewfUseLibewf`
+  - Run: `nimble test`
 
 ## Troubleshooting
 
 - `configure: error: expected an absolute directory name for --prefix`: fixed in the Nimble task (uses an absolute path).
 - `libodraw_cue_scanner.c: No such file or directory`: ensure `flex` is installed; the task sets `LEX` to a valid `flex`.
 - `pkg-config: libewf not found`: install `libewf-dev`/`libewf` or run `nimble buildLibewf`. Optionally set `PKG_CONFIG_PATH` to include the vendored prefix: `build/libewf-prefix/lib/pkgconfig`.
-
