@@ -1,43 +1,32 @@
 # Building libewf and linking nimewf
 
-This project can use either a system `libewf` (via pkg-config) or build a vendored copy from `vendor/libewf`.
+This project links against a system `libewf` (via pkg-config).
 
 ## Prerequisites
 
 - Common tools: `pkg-config`, C toolchain (GCC/Clang), `make`.
-- Autotools stack for the vendored build: `autoconf`, `automake`, `libtool`, `bison`, `flex`.
+  (CI images usually provide a C toolchain; install if needed.)
 
 ### macOS (Homebrew)
 
 - Install deps:
-  - `brew install pkg-config autoconf automake libtool bison flex`
-  - Note: Homebrew’s `flex` is keg-only; the build task auto-detects it at `$(brew --prefix flex)/bin/flex`.
+  - `brew install libewf pkg-config`
 
 ### Ubuntu/Debian (apt)
 
 - Install deps:
   - `sudo apt-get update`
-  - `sudo apt-get install -y build-essential pkg-config autoconf automake libtool bison flex`
-  - If using system libewf: `sudo apt-get install -y libewf-dev`
+  - `sudo apt-get install -y build-essential pkg-config libewf-dev`
 
 ### Fedora/RHEL (dnf)
 
 - Install deps:
-  - `sudo dnf install -y @development-tools pkgconf-pkg-config autoconf automake libtool bison flex`
-  - If using system libewf: `sudo dnf install -y libewf-devel`
+  - `sudo dnf install -y @development-tools pkgconf-pkg-config libewf-devel`
 
-## Options
+## Setup
 
-- System libewf (recommended on CI images that provide it):
-  - Ensure `pkg-config --cflags --libs libewf` works (install `libewf-dev`/`-devel` or `brew install libewf`).
-  - Generate config: `nimble genPkgConfig`
-  - Build/tests: `nimble test`
-
-- Vendored libewf (portable, no system package needed):
-  - Build and locally install to `build/libewf-prefix`: `nimble buildLibewf`
-  - Build/tests using vendored pkg-config file: `nimble test`
-
-Both flows generate/consume `config.nims` that wires compile flags from pkg-config.
+- Ensure `pkg-config --cflags --libs libewf` works.
+- Generate `config.nims` once: `nimble genPkgConfig`
 
 ## Nim compile examples
 
@@ -50,19 +39,14 @@ Both flows generate/consume `config.nims` that wires compile flags from pkg-conf
 ## CI notes
 
 - macOS (GitHub Actions):
-  - `brew install pkg-config autoconf automake libtool bison flex`
-  - System lib: `brew install libewf && nimble genPkgConfig`
-  - Vendored lib: `nimble buildLibewf`
-  - Run: `nimble test`
+  - `brew install libewf pkg-config`
+  - `nimble genPkgConfig && nimble test`
 
 - Ubuntu (GitHub Actions):
   - `sudo apt-get update`
-  - System lib: `sudo apt-get install -y libewf-dev pkg-config` then `nimble genPkgConfig`
-  - Vendored lib: `sudo apt-get install -y build-essential pkg-config autoconf automake libtool bison flex` then `nimble buildLibewf`
-  - Run: `nimble test`
+  - `sudo apt-get install -y libewf-dev pkg-config build-essential`
+  - `nimble genPkgConfig && nimble test`
 
 ## Troubleshooting
 
-- `configure: error: expected an absolute directory name for --prefix`: fixed in the Nimble task (uses an absolute path).
-- `libodraw_cue_scanner.c: No such file or directory`: ensure `flex` is installed; the task sets `LEX` to a valid `flex`.
-- `pkg-config: libewf not found`: install `libewf-dev`/`libewf` or run `nimble buildLibewf`. Optionally set `PKG_CONFIG_PATH` to include the vendored prefix: `build/libewf-prefix/lib/pkgconfig`.
+- `pkg-config: libewf not found`: install `libewf-dev`/`libewf` or set `PKG_CONFIG_PATH` appropriately.

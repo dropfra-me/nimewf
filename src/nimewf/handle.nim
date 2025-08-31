@@ -5,13 +5,10 @@ type
   EwfError* = ptr libewf_error_t
 
 proc newHandle*(): Handle =
-  var h: Handle = nil
-  var e: EwfError = nil
-  let rc = libewf_handle_initialize(addr h, addr e)
-  if rc == 1: h else: nil
+  var e: EwfError
+  if libewf_handle_initialize(addr result, addr e) != 1: return nil
 
 proc freeHandle*(h: var Handle): bool =
-  var e: EwfError = nil
-  let rc = libewf_handle_free(addr h, addr e)
-  result = (rc == 1)
+  var e: EwfError
+  return libewf_handle_free(addr h, addr e) == 1
 
