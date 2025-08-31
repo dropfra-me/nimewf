@@ -31,6 +31,7 @@ See `examples/minimal_client.nim` for a standalone example and `examples/README.
 ## Docs & Building
 - Build docs: `nim doc src/nimewf.nim`
 - Compilation notes and CI tips: see `docs/BUILDING.md` and `docs/LINKING.md`.
+- Windows/static and streaming design notes: see `docs/PORTABILITY.md`.
 
 ## Design Principles
 - Keep it simple: minimal, focused API that does exactly what it needs.
