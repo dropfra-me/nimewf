@@ -1,2 +1,2 @@
-from nimewf/writer import nil
-export writer
+from nimewf/version import nil
+export version
