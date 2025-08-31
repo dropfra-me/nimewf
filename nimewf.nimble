@@ -9,7 +9,7 @@ srcDir        = "src"
 
 # Dependencies
 
-requires "nim >= 2.2.4"
+requires "nim >= 1.6.0"
 
 # build the lib (vendor) and generate pkg-config based config
 task buildLibewf, "Build and locally install libewf (static) and write config.nims using pkg-config":
@@ -42,18 +42,16 @@ task buildLibewf, "Build and locally install libewf (static) and write config.ni
   let cfg = "config.nims"
   let cfgContents = """
 when defined(nimewfUseLibewf):
-  # Prefer locally built vendor pkg-config if present
-  let repoDir = getProjectPath()
-  let vendorPc = repoDir & "/build/libewf-prefix/lib/pkgconfig"
-  if dirExists(vendorPc):
-    let prev = getEnv("PKG_CONFIG_PATH")
-    if prev.len > 0:
-      putEnv("PKG_CONFIG_PATH", vendorPc & ":" & prev)
-    else:
-      putEnv("PKG_CONFIG_PATH", vendorPc)
+  # Add vendored pkg-config dir (ok if it doesn't exist)
+  let vendorPc = "./build/libewf-prefix/lib/pkgconfig"
+  let prev = getEnv("PKG_CONFIG_PATH")
+  if prev.len > 0:
+    putEnv("PKG_CONFIG_PATH", vendorPc & ":" & prev)
+  else:
+    putEnv("PKG_CONFIG_PATH", vendorPc)
 
-  let cflags = staticExec("pkg-config --cflags libewf").strip
-  let libs   = staticExec("pkg-config --libs libewf").strip
+  let cflags = staticExec("pkg-config --cflags libewf")
+  let libs   = staticExec("pkg-config --libs libewf")
   if cflags.len > 0: switch("passC", cflags)
   if libs.len > 0: switch("passL", libs)
 """
@@ -67,17 +65,15 @@ task genPkgConfig, "Write config.nims that sources flags from pkg-config (no bui
   let cfg = "config.nims"
   let cfgContents = """
 when defined(nimewfUseLibewf):
-  let repoDir = getProjectPath()
-  let vendorPc = repoDir & "/build/libewf-prefix/lib/pkgconfig"
-  if dirExists(vendorPc):
-    let prev = getEnv("PKG_CONFIG_PATH")
-    if prev.len > 0:
-      putEnv("PKG_CONFIG_PATH", vendorPc & ":" & prev)
-    else:
-      putEnv("PKG_CONFIG_PATH", vendorPc)
+  let vendorPc = "./build/libewf-prefix/lib/pkgconfig"
+  let prev = getEnv("PKG_CONFIG_PATH")
+  if prev.len > 0:
+    putEnv("PKG_CONFIG_PATH", vendorPc & ":" & prev)
+  else:
+    putEnv("PKG_CONFIG_PATH", vendorPc)
 
-  let cflags = staticExec("pkg-config --cflags libewf").strip
-  let libs   = staticExec("pkg-config --libs libewf").strip
+  let cflags = staticExec("pkg-config --cflags libewf")
+  let libs   = staticExec("pkg-config --libs libewf")
   if cflags.len > 0: switch("passC", cflags)
   if libs.len > 0: switch("passL", libs)
 """
