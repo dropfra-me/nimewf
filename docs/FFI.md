@@ -1,10 +1,7 @@
 # nimewf FFI Map
 
 This library wraps a minimal acquisition-focused subset of libewf.
-
-Build modes:
-- Default: stub FFI (no external linking) for local dev/tests.
-- Real linking: compile with `-d:nimewfUseLibewf` to enable `{.importc.}` bindings.
+It always links against the real libewf via pkg-config.
 
 ## Targeted C APIs
 - Lifecycle: `libewf_handle_initialize`, `libewf_handle_free`
