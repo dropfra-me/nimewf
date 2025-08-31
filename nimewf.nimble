@@ -1,0 +1,85 @@
+# Package
+
+version       = "0.1.0"
+author        = "srozb"
+description   = "libewf wrapper"
+license       = "MIT"
+srcDir        = "src"
+
+
+# Dependencies
+
+requires "nim >= 2.2.4"
+
+# build the lib (vendor) and generate pkg-config based config
+task buildLibewf, "Build and locally install libewf (static) and write config.nims using pkg-config":
+  let prefixRel = "build/libewf-prefix"
+  let absPrefix = getCurrentDir() & "/" & prefixRel
+  let absPrefixQ = "\"" & absPrefix & "\""
+  echo "[nimewf] Building libewf into " & absPrefix
+  # Prepare vendor build; synclibs can be noisy and sometimes not needed, ignore failure
+  exec "cd vendor/libewf && ./synclibs.sh || true"
+  # Clean previous auto-tools artifacts to pick up toolchain/env changes
+  if fileExists("vendor/libewf/Makefile"):
+    exec "cd vendor/libewf && make distclean || true"
+  exec "cd vendor/libewf && ./autogen.sh"
+  # Static build + local prefix install to expose a pkg-config file under prefix/lib/pkgconfig
+  # Ensure generated scanner is created: hint LEX to flex (brew install flex)
+  var lexCmd = "flex"
+  try:
+    let brewLex = staticExec("brew --prefix flex").strip
+    if brewLex.len > 0 and fileExists(brewLex & "/bin/flex"):
+      lexCmd = brewLex & "/bin/flex"
+  except CatchableError:
+    discard
+  let envs = "LEX=\"" & lexCmd & "\" YACC=\"bison -y\""
+  exec "cd vendor/libewf && ./configure --enable-static --disable-shared --prefix=" & absPrefixQ & " " & envs
+  exec "cd vendor/libewf && make -j2"
+  exec "cd vendor/libewf && make install"
+
+  # Generate config.nims that wires Nim to pkg-config at compile time.
+  # It will prefer the locally installed vendor/pkgconfig if present.
+  let cfg = "config.nims"
+  let cfgContents = """
+when defined(nimewfUseLibewf):
+  # Prefer locally built vendor pkg-config if present
+  let repoDir = getProjectPath()
+  let vendorPc = repoDir & "/build/libewf-prefix/lib/pkgconfig"
+  if dirExists(vendorPc):
+    let prev = getEnv("PKG_CONFIG_PATH")
+    if prev.len > 0:
+      putEnv("PKG_CONFIG_PATH", vendorPc & ":" & prev)
+    else:
+      putEnv("PKG_CONFIG_PATH", vendorPc)
+
+  let cflags = staticExec("pkg-config --cflags libewf").strip
+  let libs   = staticExec("pkg-config --libs libewf").strip
+  if cflags.len > 0: switch("passC", cflags)
+  if libs.len > 0: switch("passL", libs)
+"""
+  writeFile(cfg, cfgContents)
+  echo "[nimewf] Wrote pkg-config based flags to " & cfg
+
+# You can run: nimble buildLibewf
+# Then compile with real libewf via: -d:nimewfUseLibewf
+
+task genPkgConfig, "Write config.nims that sources flags from pkg-config (no build)":
+  let cfg = "config.nims"
+  let cfgContents = """
+when defined(nimewfUseLibewf):
+  let repoDir = getProjectPath()
+  let vendorPc = repoDir & "/build/libewf-prefix/lib/pkgconfig"
+  if dirExists(vendorPc):
+    let prev = getEnv("PKG_CONFIG_PATH")
+    if prev.len > 0:
+      putEnv("PKG_CONFIG_PATH", vendorPc & ":" & prev)
+    else:
+      putEnv("PKG_CONFIG_PATH", vendorPc)
+
+  let cflags = staticExec("pkg-config --cflags libewf").strip
+  let libs   = staticExec("pkg-config --libs libewf").strip
+  if cflags.len > 0: switch("passC", cflags)
+  if libs.len > 0: switch("passL", libs)
+"""
+  writeFile(cfg, cfgContents)
+  echo "[nimewf] Wrote pkg-config based flags to " & cfg
