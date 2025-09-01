@@ -49,6 +49,19 @@ proc libewf_handle_set_format*(
   error: ptr ptr libewf_error_t
 ): cint {.importc, cdecl.}
 
+# Media size
+proc libewf_handle_set_media_size*(
+  handle: ptr libewf_handle_t,
+  media_size: culonglong,
+  error: ptr ptr libewf_error_t
+): cint {.importc, cdecl.}
+
+proc libewf_handle_get_media_size*(
+  handle: ptr libewf_handle_t,
+  media_size: ptr culonglong,
+  error: ptr ptr libewf_error_t
+): cint {.importc, cdecl.}
+
 # Error helpers
 proc libewf_error_free*(
   error: ptr ptr libewf_error_t
@@ -115,3 +128,35 @@ proc libewf_handle_write_finalize*(
   handle: ptr libewf_handle_t,
   error: ptr ptr libewf_error_t
 ): clong {.importc, cdecl.}
+
+proc libewf_handle_read_buffer*(
+  handle: ptr libewf_handle_t,
+  buffer: pointer,
+  buffer_size: csize_t,
+  error: ptr ptr libewf_error_t
+): clong {.importc, cdecl.}
+
+proc libewf_handle_segment_files_corrupted*(
+  handle: ptr libewf_handle_t,
+  error: ptr ptr libewf_error_t
+): cint {.importc, cdecl.}
+
+proc libewf_handle_get_number_of_checksum_errors*(
+  handle: ptr libewf_handle_t,
+  number_of_errors: ptr uint32,
+  error: ptr ptr libewf_error_t
+): cint {.importc, cdecl.}
+
+proc libewf_handle_get_md5_hash*(
+  handle: ptr libewf_handle_t,
+  md5_hash: ptr uint8,
+  size: csize_t,
+  error: ptr ptr libewf_error_t
+): cint {.importc, cdecl.}
+
+proc libewf_handle_get_sha1_hash*(
+  handle: ptr libewf_handle_t,
+  sha1_hash: ptr uint8,
+  size: csize_t,
+  error: ptr ptr libewf_error_t
+): cint {.importc, cdecl.}
