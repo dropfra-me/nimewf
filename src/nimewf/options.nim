@@ -34,6 +34,12 @@ proc setBytesPerSector*(h: Handle, bps: uint32 = 512'u32): bool =
 proc getBytesPerSector*(h: Handle, bps: var uint32): bool =
   return libewf_handle_get_bytes_per_sector(h, addr bps, addr ewfError) == 1
 
+proc setSectorsPerChunk*(h: Handle, spc: uint32): bool =
+  return libewf_handle_set_sectors_per_chunk(h, spc, addr ewfError) == 1
+
+proc getSectorsPerChunk*(h: Handle, spc: var uint32): bool =
+  return libewf_handle_get_sectors_per_chunk(h, addr spc, addr ewfError) == 1
+
 proc applyRecommendedDefaults*(h: Handle) =
   ## Apply sane defaults for common EWF acquisitions.
   discard setFormat(h, fmtEwf)

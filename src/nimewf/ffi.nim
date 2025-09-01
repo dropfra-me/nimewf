@@ -74,6 +74,18 @@ proc libewf_handle_get_bytes_per_sector*(
   error: ptr ptr libewf_error_t
 ): cint {.importc, cdecl.}
 
+proc libewf_handle_set_sectors_per_chunk*(
+  handle: ptr libewf_handle_t,
+  sectors_per_chunk: uint32,
+  error: ptr ptr libewf_error_t
+): cint {.importc, cdecl.}
+
+proc libewf_handle_get_sectors_per_chunk*(
+  handle: ptr libewf_handle_t,
+  sectors_per_chunk: ptr uint32,
+  error: ptr ptr libewf_error_t
+): cint {.importc, cdecl.}
+
 # Error helpers
 proc libewf_error_free*(
   error: ptr ptr libewf_error_t
