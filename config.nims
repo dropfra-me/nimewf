@@ -24,5 +24,30 @@ when defined(windows):
   if not havePkg("openssl"):
     accL.add(" -lcrypto")
 
+  # Fallback for libewf on Windows when pkg-config is not resolving but PKG_CONFIG_PATH is set
+  if not havePkg("libewf"):
+    let pcEnv = getEnv("PKG_CONFIG_PATH")
+    if pcEnv.len > 0:
+      # take first path up to ';' or ':'
+      var first = pcEnv
+      var sep = -1
+      for i in 0 ..< pcEnv.len:
+        let ch = pcEnv[i]
+        if ch == ';' or ch == ':':
+          sep = i
+          break
+      if sep >= 0: first = pcEnv[0 .. sep-1]
+      # if ends with /lib/pkgconfig, derive prefix
+      let suffix = "/lib/pkgconfig"
+      if first.len >= suffix.len:
+        let start = first.len - suffix.len
+        var matches = true
+        for i in 0 ..< suffix.len:
+          if first[start + i] != suffix[i]: matches = false
+        if matches:
+          let prefix = first[0 .. start-1]
+          accC.add(" -I" & prefix & "/include")
+          accL.add(" -L" & prefix & "/lib -lewf")
+
 if accC.len > 0: switch("passC", accC)
 if accL.len > 0: switch("passL", accL)
