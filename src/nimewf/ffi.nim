@@ -31,9 +31,21 @@ proc libewf_handle_set_maximum_segment_size*(
   error: ptr ptr libewf_error_t
 ): cint {.importc, cdecl.}
 
+proc libewf_handle_get_maximum_segment_size*(
+  handle: ptr libewf_handle_t,
+  maximum_segment_size: ptr culonglong,
+  error: ptr ptr libewf_error_t
+): cint {.importc, cdecl.}
+
 proc libewf_handle_set_media_type*(
   handle: ptr libewf_handle_t,
   media_type: uint8,
+  error: ptr ptr libewf_error_t
+): cint {.importc, cdecl.}
+
+proc libewf_handle_get_media_type*(
+  handle: ptr libewf_handle_t,
+  media_type: ptr uint8,
   error: ptr ptr libewf_error_t
 ): cint {.importc, cdecl.}
 
@@ -43,9 +55,21 @@ proc libewf_handle_set_media_flags*(
   error: ptr ptr libewf_error_t
 ): cint {.importc, cdecl.}
 
+proc libewf_handle_get_media_flags*(
+  handle: ptr libewf_handle_t,
+  media_flags: ptr uint8,
+  error: ptr ptr libewf_error_t
+): cint {.importc, cdecl.}
+
 proc libewf_handle_set_format*(
   handle: ptr libewf_handle_t,
   format: uint8,
+  error: ptr ptr libewf_error_t
+): cint {.importc, cdecl.}
+
+proc libewf_handle_get_format*(
+  handle: ptr libewf_handle_t,
+  format: ptr uint8,
   error: ptr ptr libewf_error_t
 ): cint {.importc, cdecl.}
 
@@ -85,6 +109,21 @@ proc libewf_handle_get_sectors_per_chunk*(
   sectors_per_chunk: ptr uint32,
   error: ptr ptr libewf_error_t
 ): cint {.importc, cdecl.}
+
+proc libewf_handle_get_compression_values*(
+  handle: ptr libewf_handle_t,
+  compression_level: ptr int8,
+  compression_flags: ptr uint8,
+  error: ptr ptr libewf_error_t
+): cint {.importc, cdecl.}
+
+# Optional/newer API in some builds; keep behind a define to avoid link issues on very old libewf
+when defined(nimewfHeaderCodepage):
+  proc libewf_handle_set_header_codepage*(
+    handle: ptr libewf_handle_t,
+    codepage: cstring,
+    error: ptr ptr libewf_error_t
+  ): cint {.importc, cdecl.}
 
 # Error helpers
 proc libewf_error_free*(
