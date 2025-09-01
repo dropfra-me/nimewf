@@ -5,4 +5,5 @@ from nimewf/error import nil
 from nimewf/writer import nil
 from nimewf/metadata import nil
 from nimewf/types import nil
-export version, handle, options, error, writer, metadata, types
+from nimewf/verify import nil
+export version, handle, options, error, writer, metadata, types, verify

@@ -17,3 +17,13 @@ proc setMediaFlags*(h: Handle, flags: set[MediaFlag]): bool =
 
 proc setFormat*(h: Handle, fmt: Format): bool =
   return libewf_handle_set_format(h, uint8(ord(fmt)), addr ewfError) == 1
+
+proc setMediaSize*(h: Handle, size: uint64): bool =
+  ## Sets the (media) size in bytes.
+  return libewf_handle_set_media_size(h, culonglong(size), addr ewfError) == 1
+
+proc getMediaSize*(h: Handle, size: var uint64): bool =
+  var tmp: culonglong
+  let ok = libewf_handle_get_media_size(h, addr tmp, addr ewfError) == 1
+  if ok: size = uint64(tmp)
+  return ok

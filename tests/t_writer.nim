@@ -2,6 +2,7 @@ import unittest
 import os
 import times
 import nimewf
+import strutils
 
 suite "writer pipeline":
   test "open/write/finalize/close produces a segment file":
@@ -25,3 +26,21 @@ suite "writer pipeline":
     let ok = freeHandle(h)
     check ok
     check h == nil
+
+  test "verify helper reads and reports":
+    # Use previous image if present, or create a tiny one
+    let base = getTempDir() / ("nimewf_verify_" & $(epochTime().int))
+    var h = newHandle()
+    require h != nil
+    require openForWrite(h, base)
+    var buf: array[8, byte]
+    for i in 0 ..< buf.len: buf[i] = byte(i)
+    discard writeBuffer(h, buf)
+    discard finalizeWrite(h)
+    discard close(h)
+    discard freeHandle(h)
+    var seg = base & ".E01"
+    if not fileExists(seg): seg = base & ".e01"
+    let res = verify(seg)
+    check res.ok == true
+    check res.checksumErrors >= 0
