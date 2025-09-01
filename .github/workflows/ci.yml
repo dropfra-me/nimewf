@@ -97,10 +97,16 @@ jobs:
         with:
           nim-version: ${{ matrix.nim }}
           repo-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Export Nim bin to PATH for MSYS2 steps
+        shell: pwsh
+        run: |
+          $nimBin = "$env:GITHUB_WORKSPACE\.nim_runtime\bin"
+          echo "NIM_BIN=$nimBin" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
       - name: Build libewf from source (MSYS2)
         shell: msys2 {0}
         run: |
           set -euxo pipefail
+          export PATH="$(cygpath -u "$NIM_BIN"):$PATH"
           echo "PATH=$PATH"
           which pkg-config || true
           pkg-config --version || true
@@ -116,6 +122,7 @@ jobs:
       - name: Show tool versions
         shell: msys2 {0}
         run: |
+          export PATH="$(cygpath -u "$NIM_BIN"):$PATH"
           which nim || true
           which nimble || true
           which pkg-config || true
@@ -123,4 +130,6 @@ jobs:
           pkg-config --libs openssl || true
       - name: Test
         shell: msys2 {0}
-        run: nimble test -y
+        run: |
+          export PATH="$(cygpath -u "$NIM_BIN"):$PATH"
+          nimble test -y
