@@ -5,6 +5,14 @@ import ./state
 template idPtr*(s: static[string]): ptr uint8 =
   cast[ptr uint8](cstring(s))
 
+proc setUtf8Header*(h: Handle, key, value: string): bool =
+  return libewf_handle_set_utf8_header_value(
+    h,
+    cast[ptr uint8](key.cstring), key.len.csize_t,
+    cast[ptr uint8](value.cstring), value.len.csize_t,
+    addr ewfError
+  ) == 1
+
 proc setCaseNumber*(h: Handle, value: string): bool =
   return libewf_handle_set_utf8_header_value(
     h,
@@ -36,6 +44,21 @@ proc setNotes*(h: Handle, value: string): bool =
     cast[ptr uint8](value.cstring), value.len.csize_t,
     addr ewfError
   ) == 1
+
+proc setEvidenceNumber*(h: Handle, value: string): bool =
+  return setUtf8Header(h, "evidence_number", value)
+
+proc setOrganization*(h: Handle, value: string): bool =
+  return setUtf8Header(h, "organization", value)
+
+proc setPhoneNumber*(h: Handle, value: string): bool =
+  return setUtf8Header(h, "phone_number", value)
+
+proc setDeviceModel*(h: Handle, value: string): bool =
+  return setUtf8Header(h, "device_model", value)
+
+proc setSerialNumber*(h: Handle, value: string): bool =
+  return setUtf8Header(h, "serial_number", value)
 
 # Helpers to fetch values for tests/debugging
 proc getUtf8Header*(h: Handle, key: string): string =
