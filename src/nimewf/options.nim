@@ -40,6 +40,49 @@ proc setSectorsPerChunk*(h: Handle, spc: uint32): bool =
 proc getSectorsPerChunk*(h: Handle, spc: var uint32): bool =
   return libewf_handle_get_sectors_per_chunk(h, addr spc, addr ewfError) == 1
 
+proc getFormat*(h: Handle, outFmt: var Format): bool =
+  var fmtU8: uint8
+  let ok = libewf_handle_get_format(h, addr fmtU8, addr ewfError) == 1
+  if ok:
+    outFmt = findEnumByOrd[Format](fmtU8, allFormats, fmtUnknown)
+  ok
+
+proc getMaximumSegmentSize*(h: Handle, outSize: var uint64): bool =
+  var tmp: culonglong
+  let ok = libewf_handle_get_maximum_segment_size(h, addr tmp, addr ewfError) == 1
+  if ok: outSize = uint64(tmp)
+  ok
+
+proc getCompressionValues*(h: Handle, level: var CompressionLevel, flags: var set[CompressionFlag]): bool =
+  var lvl: int8
+  var flg: uint8
+  let ok = libewf_handle_get_compression_values(h, addr lvl, addr flg, addr ewfError) == 1
+  if ok:
+    if lvl < -1 or lvl > 2: level = clDefault else: level = CompressionLevel(lvl)
+    flags = fromU8[CompressionFlag](flg)
+  ok
+
+proc getMediaType*(h: Handle, outType: var MediaType): bool =
+  var mt: uint8
+  let ok = libewf_handle_get_media_type(h, addr mt, addr ewfError) == 1
+  if ok:
+    outType = findEnumByOrd[MediaType](mt, allMediaTypes, mediaRemovable)
+  ok
+
+proc getMediaFlags*(h: Handle, outFlags: var set[MediaFlag]): bool =
+  var mf: uint8
+  let ok = libewf_handle_get_media_flags(h, addr mf, addr ewfError) == 1
+  if ok: outFlags = fromU8[MediaFlag](mf)
+  ok
+
+proc setHeaderCodepage*(h: Handle, codepage: string): bool =
+  ## Best-effort mapping to libewf header codepage API; returns false if unavailable.
+  when defined(nimewfHeaderCodepage):
+    return libewf_handle_set_header_codepage(h, codepage.cstring, addr ewfError) == 1
+  else:
+    discard h; discard codepage
+    return false
+
 proc applyRecommendedDefaults*(h: Handle) =
   ## Apply sane defaults for common EWF acquisitions.
   discard setFormat(h, fmtEwf)
