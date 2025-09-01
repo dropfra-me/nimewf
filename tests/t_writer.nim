@@ -17,6 +17,7 @@ suite "writer pipeline":
     discard setMediaFlags(h, {})
     discard setCompressionValues(h, clNone, {})
     discard setMaximumSegmentSize(h, 64'u64 * 1024 * 1024)
+    discard setBytesPerSector(h, 512'u32)
     check setMediaSize(h, uint64(buf.len))
     let (wrote, hs) = writeAndHash(h, buf)
     check wrote == buf.len
@@ -47,6 +48,7 @@ suite "writer pipeline":
     discard setMediaFlags(h, {})
     discard setCompressionValues(h, clNone, {})
     discard setMaximumSegmentSize(h, 64'u64 * 1024 * 1024)
+    discard setBytesPerSector(h, 512'u32)
     check setMediaSize(h, uint64(buf.len))
     let (_, hs) = writeAndHash(h, buf)
     check setStoredHashes(h, hs)
