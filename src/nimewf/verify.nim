@@ -75,9 +75,11 @@ proc verify*(path: string, bufSize: int = 1 shl 20): VerifyResult =
 
   var md5s: array[16, uint8]
   var sha1s: array[20, uint8]
-  if libewf_handle_get_md5_hash(h, addr md5s[0], md5s.len.csize_t, addr ewfError) == 1:
+  let hasMd5 = libewf_handle_get_md5_hash(h, addr md5s[0], md5s.len.csize_t, addr ewfError) == 1
+  if hasMd5:
     result.md5Stored = toHex(md5s)
-  if libewf_handle_get_sha1_hash(h, addr sha1s[0], sha1s.len.csize_t, addr ewfError) == 1:
+  let hasSha1 = libewf_handle_get_sha1_hash(h, addr sha1s[0], sha1s.len.csize_t, addr ewfError) == 1
+  if hasSha1:
     result.sha1Stored = toHex(sha1s)
   result.sha256Stored = ""
   # Optional SHA256 header value
@@ -90,10 +92,7 @@ proc verify*(path: string, bufSize: int = 1 shl 20): VerifyResult =
     echo "[verify] sha1 computed=", result.sha1, " stored=", result.sha1Stored
     if result.sha256Stored.len > 0:
       echo "[verify] sha256 computed=", result.sha256, " stored=", result.sha256Stored
-  # Compare digests case-insensitively to account for different hex casing across platforms/tools.
-  let md5StoredLc = toLowerAscii(result.md5Stored)
-  let sha1StoredLc = toLowerAscii(result.sha1Stored)
-  let sha256StoredLc = toLowerAscii(result.sha256Stored)
-  result.md5Match = (result.md5Stored.len == 32 and md5StoredLc == result.md5)
-  result.sha1Match = (result.sha1Stored.len == 40 and sha1StoredLc == result.sha1)
-  result.sha256Match = (result.sha256Stored.len == 64 and sha256StoredLc == result.sha256)
+  # Prefer binary comparison for MD5/SHA1 (no string case issues); keep SHA256 string compare (header stores hex).
+  result.md5Match = hasMd5 and (md5c == md5s)
+  result.sha1Match = hasSha1 and (sha1c == sha1s)
+  result.sha256Match = (result.sha256Stored.len == 64 and toLowerAscii(result.sha256Stored) == result.sha256)
