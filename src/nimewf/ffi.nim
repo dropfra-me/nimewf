@@ -160,3 +160,17 @@ proc libewf_handle_get_sha1_hash*(
   size: csize_t,
   error: ptr ptr libewf_error_t
 ): cint {.importc, cdecl.}
+
+proc libewf_handle_set_md5_hash*(
+  handle: ptr libewf_handle_t,
+  md5_hash: ptr uint8,
+  size: csize_t,
+  error: ptr ptr libewf_error_t
+): cint {.importc, cdecl.}
+
+proc libewf_handle_set_sha1_hash*(
+  handle: ptr libewf_handle_t,
+  sha1_hash: ptr uint8,
+  size: csize_t,
+  error: ptr ptr libewf_error_t
+): cint {.importc, cdecl.}

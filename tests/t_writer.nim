@@ -2,7 +2,6 @@ import unittest
 import os
 import times
 import nimewf
-import strutils
 
 suite "writer pipeline":
   test "open/write/finalize/close produces a segment file":
@@ -10,11 +9,19 @@ suite "writer pipeline":
     require h != nil
     # Prepare temp base path without extension; libewf adds .E01
     let base = getTempDir() / ("nimewf_test_" & $(epochTime().int))
-    check openForWrite(h, base)
     var buf: array[64, byte]
     for i in 0 ..< buf.len: buf[i] = byte(i)
-    let wrote = writeBuffer(h, buf)
+    check openForWrite(h, base)
+    discard setFormat(h, fmtEwf)
+    discard setMediaType(h, mediaFixed)
+    discard setMediaFlags(h, {})
+    discard setCompressionValues(h, clNone, {})
+    discard setMaximumSegmentSize(h, 64'u64 * 1024 * 1024)
+    check setMediaSize(h, uint64(buf.len))
+    let (wrote, hs) = writeAndHash(h, buf)
     check wrote == buf.len
+    check hs.md5.len == 32 and hs.sha1.len == 40 and hs.sha256.len == 64
+    check setStoredHashes(h, hs)
     check finalizeWrite(h)
     check close(h)
     var found = false
@@ -32,15 +39,26 @@ suite "writer pipeline":
     let base = getTempDir() / ("nimewf_verify_" & $(epochTime().int))
     var h = newHandle()
     require h != nil
-    require openForWrite(h, base)
     var buf: array[8, byte]
     for i in 0 ..< buf.len: buf[i] = byte(i)
-    discard writeBuffer(h, buf)
+    require openForWrite(h, base)
+    discard setFormat(h, fmtEwf)
+    discard setMediaType(h, mediaFixed)
+    discard setMediaFlags(h, {})
+    discard setCompressionValues(h, clNone, {})
+    discard setMaximumSegmentSize(h, 64'u64 * 1024 * 1024)
+    check setMediaSize(h, uint64(buf.len))
+    let (_, hs) = writeAndHash(h, buf)
+    check setStoredHashes(h, hs)
     discard finalizeWrite(h)
     discard close(h)
     discard freeHandle(h)
     var seg = base & ".E01"
     if not fileExists(seg): seg = base & ".e01"
     let res = verify(seg)
-    check res.ok == true
-    check res.checksumErrors >= 0
+    # Prefer concrete integrity signals over the coarse corrupt flag here.
+    check res.checksumErrors == 0
+    # Compare digests
+    if res.md5Stored.len == 32: check res.md5Match
+    if res.sha1Stored.len == 40: check res.sha1Match
+    if res.sha256Stored.len == 64: check res.sha256Match

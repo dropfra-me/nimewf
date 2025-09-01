@@ -42,6 +42,7 @@ when isMainModule:
   # 5) Write a few bytes
   var data: array[256, byte]
   for i in 0 ..< data.len: data[i] = byte(i)
+  discard setMediaSize(h, uint64(data.len))
   let n = writeBuffer(h, data)
   if n != data.len:
     echo "writeBuffer wrote ", n, " bytes: ", lastError()
