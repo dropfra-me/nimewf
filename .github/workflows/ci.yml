@@ -82,7 +82,6 @@ jobs:
             mingw-w64-x86_64-bzip2
             flex
             bison
-            byacc
             autoconf
             automake
             libtool
@@ -103,7 +102,7 @@ jobs:
           ./synclibs.sh || true
           ./autogen.sh
           mkdir -p "$PWD/../libewf-prefix"
-          ./configure --host=x86_64-w64-mingw32 --enable-winapi=yes --enable-static --disable-shared --prefix="$PWD/../libewf-prefix" CFLAGS="-DWINVER=0x0601"
+          ./configure --host=x86_64-w64-mingw32 --enable-winapi=yes --enable-static --disable-shared --prefix="$PWD/../libewf-prefix" CFLAGS="-DWINVER=0x0601" YACC="bison -y" LEX=flex
           make -j2
           make install
           echo "PKG_CONFIG_PATH=$PWD/../libewf-prefix/lib/pkgconfig" >> $GITHUB_ENV
