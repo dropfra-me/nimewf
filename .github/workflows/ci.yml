@@ -123,6 +123,7 @@ jobs:
         shell: msys2 {0}
         run: |
           export PATH="$(cygpath -u "$NIM_BIN"):$PATH"
+          export PKG_CONFIG_PATH="$(cygpath -u "$GITHUB_WORKSPACE")/libewf-prefix/lib/pkgconfig:$PKG_CONFIG_PATH"
           which nim || true
           which nimble || true
           which pkg-config || true
@@ -132,4 +133,5 @@ jobs:
         shell: msys2 {0}
         run: |
           export PATH="$(cygpath -u "$NIM_BIN"):$PATH"
+          export PKG_CONFIG_PATH="$(cygpath -u "$GITHUB_WORKSPACE")/libewf-prefix/lib/pkgconfig:$PKG_CONFIG_PATH"
           nimble test -y
