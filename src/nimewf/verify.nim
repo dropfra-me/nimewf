@@ -5,12 +5,11 @@ import ./state
 import ./crypto
 import ./metadata
 import std/strutils
-import std/os
-import ./options
 
 type VerifyResult* = object
   ok*: bool
   checksumErrors*: int
+  bytesRead*: int
   md5*: string
   sha1*: string
   sha256*: string
@@ -22,12 +21,13 @@ type VerifyResult* = object
   sha256Match*: bool
 
 proc verify*(path: string, bufSize: int = 1 shl 20): VerifyResult =
-  echo "[verify] path=", path
-  if fileExists(path):
-    try:
-      echo "[verify] fileSize=", getFileSize(path)
-    except CatchableError:
-      discard
+  when defined(nimewfDebug):
+    echo "[verify] path=", path
+    if fileExists(path):
+      try:
+        echo "[verify] fileSize=", getFileSize(path)
+      except CatchableError:
+        discard
   var h = newHandle()
   if h == nil:
     return
@@ -36,12 +36,13 @@ proc verify*(path: string, bufSize: int = 1 shl 20): VerifyResult =
   if not openForRead(h, path):
     return
   # Probe media size from handle
-  try:
-    var msz: uint64
-    if getMediaSize(h, msz):
-      echo "[verify] mediaSize=", msz
-  except CatchableError:
-    discard
+  when defined(nimewfDebug):
+    try:
+      var msz: uint64
+      if getMediaSize(h, msz):
+        echo "[verify] mediaSize=", msz
+    except CatchableError:
+      discard
   # Read the entire content to exercise the parser
   var hc: HashCtx
   hc.init()
@@ -52,14 +53,17 @@ proc verify*(path: string, bufSize: int = 1 shl 20): VerifyResult =
     if n <= 0: break
     hc.update(addr buf[0], csize_t(n))
     totalRead += int(n)
-  echo "[verify] totalRead=", totalRead
+  result.bytesRead = totalRead
+  when defined(nimewfDebug):
+    echo "[verify] totalRead=", totalRead
   # Corruption and checksum errors
   let corrupt = libewf_handle_segment_files_corrupted(h, addr ewfError)
   var nerr: uint32 = 0
   discard libewf_handle_get_number_of_checksum_errors(h, addr nerr, addr ewfError)
   result.ok = (corrupt == 0)
   result.checksumErrors = int(nerr)
-  echo "[verify] corruptFlag=", corrupt, " checksumErrors=", result.checksumErrors
+  when defined(nimewfDebug):
+    echo "[verify] corruptFlag=", corrupt, " checksumErrors=", result.checksumErrors
   # Hashes (computed and stored)
   var md5c: array[16, uint8]
   var sha1c: array[20, uint8]
@@ -81,10 +85,11 @@ proc verify*(path: string, bufSize: int = 1 shl 20): VerifyResult =
   if s256.len == 64:
     result.sha256Stored = s256
 
-  echo "[verify] md5 computed=", result.md5, " stored=", result.md5Stored
-  echo "[verify] sha1 computed=", result.sha1, " stored=", result.sha1Stored
-  if result.sha256Stored.len > 0:
-    echo "[verify] sha256 computed=", result.sha256, " stored=", result.sha256Stored
+  when defined(nimewfDebug):
+    echo "[verify] md5 computed=", result.md5, " stored=", result.md5Stored
+    echo "[verify] sha1 computed=", result.sha1, " stored=", result.sha1Stored
+    if result.sha256Stored.len > 0:
+      echo "[verify] sha256 computed=", result.sha256, " stored=", result.sha256Stored
   result.md5Match = (result.md5Stored.len == 32 and result.md5Stored == result.md5)
   result.sha1Match = (result.sha1Stored.len == 40 and result.sha1Stored == result.sha1)
   result.sha256Match = (result.sha256Stored.len == 64 and toLowerAscii(result.sha256Stored) == result.sha256)

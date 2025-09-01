@@ -27,3 +27,18 @@ proc getMediaSize*(h: Handle, size: var uint64): bool =
   let ok = libewf_handle_get_media_size(h, addr tmp, addr ewfError) == 1
   if ok: size = uint64(tmp)
   return ok
+
+proc setBytesPerSector*(h: Handle, bps: uint32 = 512'u32): bool =
+  return libewf_handle_set_bytes_per_sector(h, bps, addr ewfError) == 1
+
+proc getBytesPerSector*(h: Handle, bps: var uint32): bool =
+  return libewf_handle_get_bytes_per_sector(h, addr bps, addr ewfError) == 1
+
+proc applyRecommendedDefaults*(h: Handle) =
+  ## Apply sane defaults for common EWF acquisitions.
+  discard setFormat(h, fmtEwf)
+  discard setMediaType(h, mediaFixed)
+  discard setMediaFlags(h, {})
+  discard setCompressionValues(h, clFast, {compressEmptyBlock})
+  discard setMaximumSegmentSize(h, 1500'u64 * 1024 * 1024)
+  # discard setBytesPerSector(h, 512'u32)

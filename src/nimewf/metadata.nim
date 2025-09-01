@@ -56,3 +56,8 @@ proc getUtf8Header*(h: Handle, key: string): string =
   )
   # Returned size includes NUL; convert via cstring to truncate at the first NUL
   result = $buf.cstring
+
+proc getCaseNumber*(h: Handle): string = getUtf8Header(h, "case_number")
+proc getDescription*(h: Handle): string = getUtf8Header(h, "description")
+proc getExaminerName*(h: Handle): string = getUtf8Header(h, "examiner_name")
+proc getNotes*(h: Handle): string = getUtf8Header(h, "notes")

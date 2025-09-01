@@ -1,22 +1,22 @@
 # nimewf
 
-A small Nim wrapper around libewf (Expert Witness Format). It links against libewf via pkg-config and provides a clean, minimal API surface you can build on.
+A small, friendly Nim wrapper around libewf (Expert Witness Format). It exposes a minimal, ergonomic API for creating and verifying EWF images. This library also serves as a foundation for building a static, self‑contained “ewfacquire‑like” executable to aid DFIR engagements where quick, scriptable imaging is essential.
 
-- Always links to the real libewf (no stub mode).
-- Links against a system libewf (Homebrew/apt) discovered via pkg-config.
-- Modern build flow using Nimble tasks + pkg-config.
+* Links against system `libewf` via pkg-config.
 
 ## Quick Start
 
-1) Install libewf and pkg-config
-- macOS: `brew install libewf pkg-config`
-- Ubuntu: `sudo apt-get install -y libewf-dev pkg-config`
-- Then generate flags once: `nimble genPkgConfig`
+### Install libewf, OpenSSL (hashing), and pkg-config
 
-2) Run tests
-- `nimble test`
+* macOS: `brew install libewf openssl@3 pkg-config`
+* Ubuntu: `sudo apt-get install -y libewf-dev libssl-dev pkg-config`
 
-3) Use in your app
+### Run tests
+
+* `nimble test`
+
+### Use in your app
+
 ```nim
 import nimewf
 
@@ -26,19 +26,25 @@ if h != nil:
   discard freeHandle(h)
 ```
 
-See `examples/minimal_client.nim` for a standalone example and `examples/README.md` for compile commands using pkg-config.
+## Examples
+
+* Minimal sanity check: `examples/minimal_client.nim`
+* Create from bytes: `examples/create_from_bytes.nim`
+* Create from file: `examples/create_from_file.nim`
+* Verify image: `examples/verify_image.nim`
 
 ## Docs & Building
-- Build docs: `nim doc src/nimewf.nim`
-- Compilation notes and CI tips: see `docs/BUILDING.md` and `docs/LINKING.md`.
-- Windows/static and streaming design notes: see `docs/PORTABILITY.md`.
- - Roadmap / wrapped vs planned APIs: see `docs/TODO.md`.
+
+* Build docs: `nim doc src/nimewf.nim`
+* Building and environment notes: `docs/BUILDING.md`
+* Roadmap / wrapped vs planned APIs: `docs/TODO.md`
 
 ## Design Principles
-- Keep it simple: minimal, focused API that does exactly what it needs.
-- Avoid unnecessary complexity: prefer straightforward wrappers and types.
-- Modern build: pkg-config + Nimble tasks.
-- Tests first: unit tests for wrapper behavior and lifecycle handling.
+
+* Keep it simple: minimal, focused API that does exactly what it needs.
+* Avoid unnecessary complexity: straightforward wrappers and typed options.
+* Tests first: unit tests for lifecycle, options, metadata, write/verify.
 
 ## License
+
 MIT
