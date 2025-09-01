@@ -1,0 +1,107 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  linux:
+    name: Linux (Ubuntu) Nim ${{ matrix.nim }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        nim: [ '2.x' ]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install system deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libewf-dev libssl-dev pkg-config build-essential
+      - name: Cache nimble
+        id: cache-nimble
+        uses: actions/cache@v4
+        with:
+          path: ~/.nimble
+          key: ${{ runner.os }}-nimble-${{ hashFiles('*.nimble') }}
+          restore-keys: |
+            ${{ runner.os }}-nimble-
+      - name: Setup Nim
+        uses: jiro4989/setup-nim-action@v2
+        with:
+          nim-version: ${{ matrix.nim }}
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build
+        run: nimble build -Y
+      - name: Test
+        run: nimble test -Y
+
+  macos:
+    name: macOS Nim ${{ matrix.nim }}
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        nim: [ '2.x' ]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install system deps
+        run: |
+          brew update
+          brew install libewf openssl@3 pkg-config
+      - name: Cache nimble
+        id: cache-nimble
+        uses: actions/cache@v4
+        with:
+          path: ~/.nimble
+          key: ${{ runner.os }}-nimble-${{ hashFiles('*.nimble') }}
+          restore-keys: |
+            ${{ runner.os }}-nimble-
+      - name: Setup Nim
+        uses: jiro4989/setup-nim-action@v2
+        with:
+          nim-version: ${{ matrix.nim }}
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build
+        run: nimble build -Y
+      - name: Test
+        run: nimble test -Y
+
+  windows:
+    name: Windows Nim ${{ matrix.nim }}
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        nim: [ '2.x' ]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup MSYS2 with packages
+        uses: msys2/setup-msys2@v2
+        with:
+          update: true
+          install: >-
+            mingw-w64-x86_64-pkg-config
+            mingw-w64-x86_64-openssl
+            mingw-w64-x86_64-libewf
+          msystem: MINGW64
+      - name: Setup Nim
+        uses: jiro4989/setup-nim-action@v2
+        with:
+          nim-version: ${{ matrix.nim }}
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Show tool versions
+        shell: msys2 {0}
+        run: |
+          which nim || true
+          which nimble || true
+          which pkg-config || true
+          pkg-config --libs libewf || true
+          pkg-config --libs openssl || true
+      - name: Build
+        shell: msys2 {0}
+        run: nimble build -Y
+      - name: Test
+        shell: msys2 {0}
+        run: nimble test -Y
+        continue-on-error: true  # libewf may not be available on all runners; allow this job to be informative
+
