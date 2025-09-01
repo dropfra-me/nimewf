@@ -90,6 +90,10 @@ proc verify*(path: string, bufSize: int = 1 shl 20): VerifyResult =
     echo "[verify] sha1 computed=", result.sha1, " stored=", result.sha1Stored
     if result.sha256Stored.len > 0:
       echo "[verify] sha256 computed=", result.sha256, " stored=", result.sha256Stored
-  result.md5Match = (result.md5Stored.len == 32 and result.md5Stored == result.md5)
-  result.sha1Match = (result.sha1Stored.len == 40 and result.sha1Stored == result.sha1)
-  result.sha256Match = (result.sha256Stored.len == 64 and toLowerAscii(result.sha256Stored) == result.sha256)
+  # Compare digests case-insensitively to account for different hex casing across platforms/tools.
+  let md5StoredLc = toLowerAscii(result.md5Stored)
+  let sha1StoredLc = toLowerAscii(result.sha1Stored)
+  let sha256StoredLc = toLowerAscii(result.sha256Stored)
+  result.md5Match = (result.md5Stored.len == 32 and md5StoredLc == result.md5)
+  result.sha1Match = (result.sha1Stored.len == 40 and sha1StoredLc == result.sha1)
+  result.sha256Match = (result.sha256Stored.len == 64 and sha256StoredLc == result.sha256)
