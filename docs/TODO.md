@@ -35,6 +35,10 @@ High-level plan to reach a practical ewfacquire/ewfacquirestream equivalent with
   - Error: `libewf_error_sprint`, `libewf_error_free` → `lastError()`, `clearError()`
   - Typed enums: `Format`, `MediaType`, `MediaFlag`, `CompressionLevel`, `CompressionFlag`
 
+- Hashes & Integrity (nice-to-have)
+  - Enable/configure digest calculation (MD5/SHA1/SHA256 if supported)
+  - Compare computed vs stored digests in `verify`
+
 ## Planned (next)
 
 - Streaming (libbfio) for ewfacquirestream
@@ -46,20 +50,7 @@ High-level plan to reach a practical ewfacquire/ewfacquirestream equivalent with
 - Read/Extract helpers
   - Simple `readAll` and `copyToFile` for EWF → raw extraction (single stream)
 
-- Hashes & Integrity (nice-to-have)
-  - Enable/configure digest calculation (MD5/SHA1/SHA256 if supported)
-  - Compare computed vs stored digests in `verify`
-
-- Additional metadata conveniences
-  - Evidence number, dates (acquiry/system), acquisition OS/software, model/serial
-  - Named getters like `getCaseNumber()`
-
-- UX & CLI/TUI
-  - Example CLI: acquire from file/path to `.E01`, show progress, finalize, print digests
-  - Example CLI: verify `.E01` and report integrity/metadata
-
 ## Notes
 
 - Windows: see `docs/PORTABILITY.md` for static/dynamic linking guidance.
 - System packages first: rely on OS `libewf` + `pkg-config` (`nimble genPkgConfig`).
-
