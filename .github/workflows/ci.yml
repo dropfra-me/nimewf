@@ -76,7 +76,8 @@ jobs:
         with:
           update: true
           install: >-
-            mingw-w64-x86_64-pkg-config
+            pkg-config
+            mingw-w64-x86_64-pkgconf
             mingw-w64-x86_64-openssl
             mingw-w64-x86_64-zlib
             mingw-w64-x86_64-bzip2
@@ -97,6 +98,9 @@ jobs:
         shell: msys2 {0}
         run: |
           set -euxo pipefail
+          echo "PATH=$PATH"
+          which pkg-config || true
+          pkg-config --version || true
           git clone --depth 1 https://github.com/libyal/libewf.git
           cd libewf
           ./synclibs.sh || true
