@@ -83,11 +83,23 @@ proc setHeaderCodepage*(h: Handle, codepage: string): bool =
     discard h; discard codepage
     return false
 
-proc applyRecommendedDefaults*(h: Handle) =
-  ## Apply sane defaults for common EWF acquisitions.
-  discard setFormat(h, fmtEwf)
-  discard setMediaType(h, mediaFixed)
-  discard setMediaFlags(h, {})
-  discard setCompressionValues(h, clFast, {compressEmptyBlock})
-  discard setMaximumSegmentSize(h, 1500'u64 * 1024 * 1024)
-  # discard setBytesPerSector(h, 512'u32)
+proc applyRecommendedDefaults*(
+  h: Handle;
+  fmt = fmtEncase6;
+  comp = clNone;
+  compressEmpty = false;
+  segBytes = 1500'u64 * 1024 * 1024; # ~1.4 GiB
+  chunkSectors = 64'u32;
+  bps = 512'u32;
+  mediaType = mediaFixed;
+  mflags: set[MediaFlag] = {mediaPhysical}
+) =
+  ## Apply ewfacquire-aligned sane defaults, customizable via params.
+  discard setFormat(h, fmt)
+  discard setMediaType(h, mediaType)
+  discard setMediaFlags(h, mflags)
+  let cflags = (if compressEmpty: {compressEmptyBlock} else: {})
+  discard setCompressionValues(h, comp, cflags)
+  discard setMaximumSegmentSize(h, segBytes)
+  discard setSectorsPerChunk(h, chunkSectors)
+  discard setBytesPerSector(h, bps)
