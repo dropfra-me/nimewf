@@ -18,7 +18,7 @@ jobs:
       - name: Install system deps
         run: |
           sudo apt-get update
-          sudo apt-get install -y libewf-dev libssl-dev pkg-config build-essential
+          sudo apt-get install -y libewf-dev libssl-dev pkg-config build-essential flex bison byacc
       - name: Cache nimble
         id: cache-nimble
         uses: actions/cache@v4
@@ -32,10 +32,8 @@ jobs:
         with:
           nim-version: ${{ matrix.nim }}
           repo-token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build
-        run: nimble build -Y
       - name: Test
-        run: nimble test -Y
+        run: nimble test -y
 
   macos:
     name: macOS Nim ${{ matrix.nim }}
@@ -48,7 +46,7 @@ jobs:
       - name: Install system deps
         run: |
           brew update
-          brew install libewf openssl@3 pkg-config
+          brew install libewf openssl@3 pkg-config flex bison byacc
       - name: Cache nimble
         id: cache-nimble
         uses: actions/cache@v4
@@ -62,10 +60,8 @@ jobs:
         with:
           nim-version: ${{ matrix.nim }}
           repo-token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build
-        run: nimble build -Y
       - name: Test
-        run: nimble test -Y
+        run: nimble test -y
 
   windows:
     name: Windows Nim ${{ matrix.nim }}
@@ -82,13 +78,35 @@ jobs:
           install: >-
             mingw-w64-x86_64-pkg-config
             mingw-w64-x86_64-openssl
-            mingw-w64-x86_64-libewf
+            mingw-w64-x86_64-zlib
+            mingw-w64-x86_64-bzip2
+            flex
+            bison
+            byacc
+            autoconf
+            automake
+            libtool
+            make
+            git
           msystem: MINGW64
       - name: Setup Nim
         uses: jiro4989/setup-nim-action@v2
         with:
           nim-version: ${{ matrix.nim }}
           repo-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build libewf from source (MSYS2)
+        shell: msys2 {0}
+        run: |
+          set -euxo pipefail
+          git clone --depth 1 https://github.com/libyal/libewf.git
+          cd libewf
+          ./synclibs.sh || true
+          ./autogen.sh
+          mkdir -p "$PWD/../libewf-prefix"
+          ./configure --host=x86_64-w64-mingw32 --enable-winapi=yes --enable-static --disable-shared --prefix="$PWD/../libewf-prefix" CFLAGS="-DWINVER=0x0601"
+          make -j2
+          make install
+          echo "PKG_CONFIG_PATH=$PWD/../libewf-prefix/lib/pkgconfig" >> $GITHUB_ENV
       - name: Show tool versions
         shell: msys2 {0}
         run: |
@@ -97,11 +115,6 @@ jobs:
           which pkg-config || true
           pkg-config --libs libewf || true
           pkg-config --libs openssl || true
-      - name: Build
-        shell: msys2 {0}
-        run: nimble build -Y
       - name: Test
         shell: msys2 {0}
-        run: nimble test -Y
-        continue-on-error: true  # libewf may not be available on all runners; allow this job to be informative
-
+        run: nimble test -y
