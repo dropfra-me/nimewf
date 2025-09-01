@@ -78,10 +78,12 @@ jobs:
           install: >-
             pkg-config
             mingw-w64-x86_64-pkgconf
+            mingw-w64-x86_64-toolchain
             mingw-w64-x86_64-openssl
             mingw-w64-x86_64-zlib
             mingw-w64-x86_64-bzip2
             mingw-w64-x86_64-gettext
+            m4
             flex
             bison
             autoconf
