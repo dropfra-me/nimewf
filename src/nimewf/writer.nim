@@ -2,6 +2,7 @@ import ./ffi
 import ./handle
 import ./state
 import ./crypto
+import ./options
 
 proc openForWrite*(h: Handle, basePath: string): bool =
   ## Opens the handle for writing. basePath should be the base filename
@@ -9,7 +10,11 @@ proc openForWrite*(h: Handle, basePath: string): bool =
   let flags = libewf_get_access_flags_write()
   var arr = allocCStringArray([basePath])
   defer: deallocCStringArray(arr)
-  return libewf_handle_open(h, cast[ptr cstring](arr), 1.cint, flags, addr ewfError) == 1
+  let opened = libewf_handle_open(h, cast[ptr cstring](arr), 1.cint, flags, addr ewfError) == 1
+  if not opened: return false
+  # After open, apply ewfacquire-aligned defaults unconditionally; callers can override afterwards.
+  applyRecommendedDefaults(h)
+  return true
 
 proc openForRead*(h: Handle, path: string): bool =
   let flags = libewf_get_access_flags_read()
