@@ -68,3 +68,29 @@ suite "sane defaults (PR3)":
     if getMediaFlags(h, mf): check mf == {}
     discard close(h)
     discard freeHandle(h)
+
+  test "openForWrite applies defaults when untouched":
+    var h = newHandle()
+    require h != nil
+    let base = getTempDir() / ("nimewf_pr3_open_def_" & $(epochTime().int))
+    # Do NOT set any options; open should apply defaults
+    require openForWrite(h, base)
+    var fmt: Format
+    var seg: uint64
+    var spc: uint32
+    var bps: uint32
+    var lvl: CompressionLevel
+    var cfl: set[CompressionFlag]
+    var mt: MediaType
+    var mf: set[MediaFlag]
+    if getFormat(h, fmt): check fmt == fmtEncase6
+    if getMaximumSegmentSize(h, seg): check seg == 1500'u64 * 1024 * 1024
+    if getSectorsPerChunk(h, spc): check spc == 64'u32
+    if getBytesPerSector(h, bps): check bps == 512'u32
+    if getCompressionValues(h, lvl, cfl):
+      check lvl == clNone
+      check compressEmptyBlock notin cfl
+    if getMediaType(h, mt): check mt == mediaFixed
+    if getMediaFlags(h, mf): check mediaPhysical in mf
+    discard close(h)
+    discard freeHandle(h)
