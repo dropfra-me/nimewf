@@ -5,6 +5,7 @@ import nimewf/options
 import nimewf/writer
 import nimewf/verify
 import nimewf/types
+import nimewf/ffi
 import tests/support
 
 
@@ -30,6 +31,7 @@ proc acquireWithCompression(base: string, size: int, fmt: Format, segSize: uint6
   (hs, wrote)
 
 suite "compression matrix":
+  echo "[comp] libewf version=", $libewf_get_version()
   test "encase7 and ewfx single-segment integrity":
     let mediaSize = 64 * 1024 * 1024 # 64 MiB
     let segSize = 256'u64 * 1024 * 1024 # single segment for strict integrity
@@ -61,6 +63,8 @@ suite "compression matrix":
         let base = mkBase("nimewf_comp_ms_" & $ord(f) & "_" & $(int(lvl)) & "_")
         let (hs, sz) = acquireWithCompression(base, mediaSize, f, segSize, lvl, flg)
         let seg = segPath(base)
+        let produced = countSegments(base)
+        echo "[comp] f=", ord(f), " lvl=", int(lvl), " produced=", produced, " seg=", seg
         let res = verify(seg)
         check res.bytesRead == sz
         if res.checksumErrors == 0:

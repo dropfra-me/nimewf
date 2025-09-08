@@ -20,6 +20,16 @@ proc segPathIdx*(base: string, idx: int): string =
     p = base & ext2
   p
 
+proc countSegments*(base: string): int =
+  ## Counts how many segments exist starting at E01/e01.
+  result = 0
+  if fileExists(segPath(base)):
+    result = 1
+    var idx = 1
+    while fileExists(segPathIdx(base, idx)):
+      inc result
+      inc idx
+
 proc acquireImage*(base: string, size: int, fmt: Format, segmentSize: uint64, bps: uint32 = 512'u32, compress = false): tuple[hashes: HashesHex, size: int] =
   var h = newHandle()
   if h == nil: return
