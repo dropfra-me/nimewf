@@ -5,6 +5,7 @@ import ./state
 import ./crypto
 import ./metadata
 import std/strutils
+import std/os
 
 type VerifyResult* = object
   ok*: bool
@@ -33,8 +34,38 @@ proc verify*(path: string, bufSize: int = 1 shl 20): VerifyResult =
     return
   defer:
     discard freeHandle(h)
-  if not openForRead(h, path):
-    return
+  # Try to open the entire segment chain explicitly for portability (Windows/MSYS may
+  # not always auto-discover additional segments from the first file).
+  block openChain:
+    var files: seq[string] = @[]
+    files.add(path)
+    # Detect classic EWF segment suffix: .E01 / .e01, then enumerate E02/e02, E03/e03 ...
+    # Detect a 4-char extension like .E01/.e01 by looking at the last 4 chars.
+    let ext4 = (if path.len >= 4: path[(path.len - 4) ..< path.len] else: "")
+    if ext4.len == 4 and ext4[0] == '.' and (ext4[1] == 'E' or ext4[1] == 'e') and ext4[2] in {'0'..'9'} and ext4[3] in {'0'..'9'}:
+      let upper = (ext4[1] == 'E')
+      let base = path[0 ..< (path.len - 4)]
+      var i = 2
+      while i < 100: # sane upper bound to avoid runaway
+        let num = if i < 10: "0" & $i else: $i
+        let nextExt = (if upper: ".E" else: ".e") & num
+        let nextPath = base & nextExt
+        if fileExists(nextPath):
+          files.add(nextPath)
+          inc i
+        else:
+          break
+    # Open all discovered files at once
+    let flags = libewf_get_access_flags_read()
+    var carr = allocCStringArray(files)
+    defer: deallocCStringArray(carr)
+    if libewf_handle_open(h, cast[ptr cstring](carr), cint(files.len), flags, addr ewfError) != 1:
+      # Fallback to single-file open for non-standard names
+      if not openForRead(h, path):
+        return
+    when defined(nimewfDebug):
+      echo "[verify] opened files (", files.len, "):"
+      for f in files: echo "  - ", f
   # Probe media size from handle
   when defined(nimewfDebug):
     try:
