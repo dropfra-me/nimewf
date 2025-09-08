@@ -1,3 +1,0 @@
-[submodule "vendor/libewf"]
-	path = vendor/libewf
-	url = https://github.com/libyal/libewf.git

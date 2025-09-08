@@ -9,6 +9,9 @@ proc setCompressionValues*(h: Handle, level: CompressionLevel, flags: set[Compre
 proc setMaximumSegmentSize*(h: Handle, size: uint64): bool =
   return libewf_handle_set_maximum_segment_size(h, culonglong(size), addr ewfError) == 1
 
+## segment_file_size is not reliably supported/needed; prefer maximum_segment_size.
+## We intentionally do not expose set/get for segment_file_size to keep API portable.
+
 proc setMediaType*(h: Handle, mediaType: MediaType): bool =
   return libewf_handle_set_media_type(h, uint8(ord(mediaType)), addr ewfError) == 1
 
@@ -52,6 +55,28 @@ proc getMaximumSegmentSize*(h: Handle, outSize: var uint64): bool =
   let ok = libewf_handle_get_maximum_segment_size(h, addr tmp, addr ewfError) == 1
   if ok: outSize = uint64(tmp)
   ok
+
+proc tuneChunkForSegment*(h: Handle): bool =
+  ## Ensures the chunk size (sectors_per_chunk * bytes_per_sector) does not
+  ## exceed a safe fraction of the segment capacity. Returns true if values are
+  ## OK or adjusted.
+  var bps: uint32 = 512'u32
+  discard getBytesPerSector(h, bps)
+  var spc: uint32 = 64'u32
+  discard getSectorsPerChunk(h, spc)
+  # Prefer maximum_segment_size as the authoritative per-segment capacity.
+  var segSz: uint64 = 0'u64
+  discard getMaximumSegmentSize(h, segSz)
+  if segSz == 0'u64:
+    # Nothing to tune against if segment size is not configured.
+    return true
+  # Keep chunk size comfortably below the segment size to allow headers/footers.
+  # Use at most half of the segment size to be conservative across libewf variants.
+  let safeSegBytes = segSz div 2'u64
+  let maxSpc = max(1'u32, uint32(safeSegBytes div uint64(bps)))
+  if spc == 0'u32 or spc > maxSpc:
+    return setSectorsPerChunk(h, maxSpc)
+  true
 
 proc getCompressionValues*(h: Handle, level: var CompressionLevel, flags: var set[CompressionFlag]): bool =
   var lvl: int8
@@ -103,3 +128,4 @@ proc applyRecommendedDefaults*(
   discard setMaximumSegmentSize(h, segBytes)
   discard setSectorsPerChunk(h, chunkSectors)
   discard setBytesPerSector(h, bps)
+  discard tuneChunkForSegment(h)

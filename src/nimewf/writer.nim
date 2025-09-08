@@ -7,12 +7,14 @@ import ./options
 proc openForWrite*(h: Handle, basePath: string): bool =
   ## Opens the handle for writing. basePath should be the base filename
   ## (extension like .E01 is added by libewf).
+  ## Apply defaults before opening to satisfy libewf expectations for certain options,
+  ## then re-apply after open to ensure getters reflect our desired values.
+  applyRecommendedDefaults(h)
   let flags = libewf_get_access_flags_write()
   var arr = allocCStringArray([basePath])
   defer: deallocCStringArray(arr)
   let opened = libewf_handle_open(h, cast[ptr cstring](arr), 1.cint, flags, addr ewfError) == 1
   if not opened: return false
-  # After open, apply ewfacquire-aligned defaults unconditionally; callers can override afterwards.
   applyRecommendedDefaults(h)
   return true
 
@@ -25,7 +27,13 @@ proc openForRead*(h: Handle, path: string): bool =
 proc writeBuffer*(h: Handle, data: openArray[byte]): int =
   ## Returns number of bytes written, or -1 on error.
   if data.len == 0: return 0
-  return libewf_handle_write_buffer(h, unsafeAddr data[0], csize_t(data.len), addr ewfError).int
+  var off = 0
+  while off < data.len:
+    let nw = libewf_handle_write_buffer(h, unsafeAddr data[off], csize_t(data.len - off), addr ewfError)
+    if nw < 0: return -1
+    if nw == 0: break
+    off += int(nw)
+  return off
 
 proc writeBuffer*(h: Handle, f: File, bufSize: int = 1 shl 20): int =
   ## Streams the entire contents of `f` into the EWF writer in chunks.
@@ -65,14 +73,19 @@ proc writeAndHash*(h: Handle, data: openArray[byte]): tuple[bytesWritten: int, h
   if data.len == 0: return (0, HashesHex())
   var hc: HashCtx
   hc.init()
-  let nw = libewf_handle_write_buffer(h, unsafeAddr data[0], csize_t(data.len), addr ewfError)
-  if nw < 0: return (-1, HashesHex())
-  hc.update(unsafeAddr data[0], csize_t(nw))
+  var off = 0
+  while off < data.len:
+    let nw = libewf_handle_write_buffer(h, unsafeAddr data[off], csize_t(data.len - off), addr ewfError)
+    if nw < 0: return (-1, HashesHex())
+    if nw == 0:
+      break
+    hc.update(unsafeAddr data[off], csize_t(nw))
+    off += int(nw)
   var md5: array[16, uint8]
   var sha1: array[20, uint8]
   var sha256: array[32, uint8]
   hc.finish(md5, sha1, sha256)
-  result.bytesWritten = int(nw)
+  result.bytesWritten = off
   result.hashes = HashesHex(md5: toHex(md5), sha1: toHex(sha1), sha256: toHex(sha256))
 
 proc writeAndHash*(h: Handle, f: File, bufSize: int = 1 shl 20): tuple[bytesWritten: int, hashes: HashesHex] =
