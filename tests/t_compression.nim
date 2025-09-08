@@ -6,6 +6,8 @@ import nimewf/writer
 import nimewf/verify
 import nimewf/types
 import nimewf/ffi
+when defined(nimewfDebug):
+  import nimewf/state
 import tests/support
 
 
@@ -24,7 +26,15 @@ proc acquireWithCompression(base: string, size: int, fmt: Format, segSize: uint6
   var buf = newSeq[byte](size)
   for i in 0 ..< buf.len: buf[i] = byte((i * 31) and 0xFF)
   let (wrote, hs) = writeAndHash(h, buf)
-  discard finalizeWrite(h)
+  when defined(nimewfDebug):
+    echo "[comp] wrote=", wrote
+    if wrote < 0:
+      echo "[comp] write error=", lastErrorString()
+  when defined(nimewfDebug):
+    let finOk = finalizeWrite(h)
+    echo "[comp] finalize=", finOk, (if not finOk: " err=" & lastErrorString() else: "")
+  else:
+    discard finalizeWrite(h)
   discard setStoredHashes(h, hs)
   discard close(h)
   discard freeHandle(h)

@@ -6,19 +6,26 @@ proc mkBase*(prefix: string): string =
   getTempDir() / (prefix & $(epochTime().int))
 
 proc segPath*(base: string): string =
-  var p = base & ".E01"
-  if not fileExists(p): p = base & ".e01"
-  p
+  ## Returns the first segment path, trying common extensions.
+  for ext in [".E01", ".e01", ".Ex01", ".ex01"]:
+    let p = base & ext
+    if fileExists(p): return p
+  # Default to classic lower-case if nothing exists yet (writer will create one).
+  base & ".e01"
 
 proc segPathIdx*(base: string, idx: int): string =
-  # Additional segments are numbered starting at E02 for idx=1, E03 for idx=2, etc.
+  # Additional segments: E02/e02 for classic; Ex02/ex02 for EWF-X.
   let n = idx + 1
-  let ext = ".E" & (if n < 10: "0" & $n else: $n)
-  var p = base & ext
-  if not fileExists(p):
-    let ext2 = ".e" & (if n < 10: "0" & $n else: $n)
-    p = base & ext2
-  p
+  for ext in [
+    ".E" & (if n < 10: "0" & $n else: $n),
+    ".e" & (if n < 10: "0" & $n else: $n),
+    ".Ex" & (if n < 10: "0" & $n else: $n),
+    ".ex" & (if n < 10: "0" & $n else: $n)
+  ]:
+    let p = base & ext
+    if fileExists(p): return p
+  # Default to classic lower-case
+  base & ".e" & (if n < 10: "0" & $n else: $n)
 
 proc countSegments*(base: string): int =
   ## Counts how many segments exist starting at E01/e01.

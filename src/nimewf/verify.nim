@@ -40,13 +40,28 @@ proc verify*(path: string, bufSize: int = 1 shl 20): VerifyResult =
     var files: seq[string] = @[]
     files.add(path)
     # Detect classic EWF segment suffix: .E01 / .e01, then enumerate E02/e02, E03/e03 ...
-    # Detect a 4-char extension like .E01/.e01 by looking at the last 4 chars.
+    # Detect classic .E01/.e01 (4 chars) or EWF-X .Ex01/.ex01 (5 chars).
     let ext4 = (if path.len >= 4: path[(path.len - 4) ..< path.len] else: "")
-    if ext4.len == 4 and ext4[0] == '.' and (ext4[1] == 'E' or ext4[1] == 'e') and ext4[2] in {'0'..'9'} and ext4[3] in {'0'..'9'}:
+    let ext5 = (if path.len >= 5: path[(path.len - 5) ..< path.len] else: "")
+    if ext5.len == 5 and ext5[0] == '.' and (ext5[1] == 'E' or ext5[1] == 'e') and (ext5[2] == 'x' or ext5[2] == 'X') and ext5[3] in {'0'..'9'} and ext5[4] in {'0'..'9'}:
+      let upperE = (ext5[1] == 'E')
+      let upperX = (ext5[2] == 'X')
+      let base = path[0 ..< (path.len - 5)]
+      var i = 2
+      while i < 100:
+        let num = if i < 10: "0" & $i else: $i
+        let nextExt = "." & (if upperE: "E" else: "e") & (if upperX: "X" else: "x") & num
+        let nextPath = base & nextExt
+        if fileExists(nextPath):
+          files.add(nextPath)
+          inc i
+        else:
+          break
+    elif ext4.len == 4 and ext4[0] == '.' and (ext4[1] == 'E' or ext4[1] == 'e') and ext4[2] in {'0'..'9'} and ext4[3] in {'0'..'9'}:
       let upper = (ext4[1] == 'E')
       let base = path[0 ..< (path.len - 4)]
       var i = 2
-      while i < 100: # sane upper bound to avoid runaway
+      while i < 100:
         let num = if i < 10: "0" & $i else: $i
         let nextExt = (if upper: ".E" else: ".e") & num
         let nextPath = base & nextExt
@@ -60,6 +75,8 @@ proc verify*(path: string, bufSize: int = 1 shl 20): VerifyResult =
     var carr = allocCStringArray(files)
     defer: deallocCStringArray(carr)
     if libewf_handle_open(h, cast[ptr cstring](carr), cint(files.len), flags, addr ewfError) != 1:
+      when defined(nimewfDebug):
+        echo "[verify] open chain failed: ", lastErrorString()
       # Fallback to single-file open for non-standard names
       if not openForRead(h, path):
         return

@@ -33,7 +33,7 @@ jobs:
           nim-version: ${{ matrix.nim }}
           repo-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Test
-        run: nimble test -y
+        run: nimble test -y -d:nimewfDebug
 
   macos:
     name: macOS Nim ${{ matrix.nim }}
@@ -61,7 +61,7 @@ jobs:
           nim-version: ${{ matrix.nim }}
           repo-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Test
-        run: nimble test -y
+        run: nimble test -y -d:nimewfDebug
 
   windows:
     name: Windows Nim ${{ matrix.nim }}
