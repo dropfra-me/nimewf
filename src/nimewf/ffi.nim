@@ -37,6 +37,9 @@ proc libewf_handle_get_maximum_segment_size*(
   error: ptr ptr libewf_error_t
 ): cint {.importc, cdecl.}
 
+# File segmentation controls
+## Intentionally no segment_file_size API: prefer maximum_segment_size for portability.
+
 proc libewf_handle_set_media_type*(
   handle: ptr libewf_handle_t,
   media_type: uint8,
