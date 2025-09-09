@@ -66,14 +66,6 @@ proc verify*(path: string, bufSize: int = 1 shl 20): VerifyResult =
     when defined(nimewfDebug):
       echo "[verify] opened files (", files.len, "):"
       for f in files: echo "  - ", f
-  # Probe media size from handle
-  when defined(nimewfDebug):
-    try:
-      var msz: uint64
-      if getMediaSize(h, msz):
-        echo "[verify] mediaSize=", msz
-    except CatchableError:
-      discard
   # Read the entire content to exercise the parser
   var hc: HashCtx
   hc.init()
